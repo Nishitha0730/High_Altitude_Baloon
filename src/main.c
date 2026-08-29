@@ -16,8 +16,8 @@ void SystemInit(void) {
 }
 
 void USART1_IRQHandler(void){
-    if((USART_SR&(1<<TXE))&&(data_ind<sizeof(imu_buf))){
-        UART_Send(imu_buf[data_ind++]);
+    if((USART_SR&(1<<TXE))&&(data_ind<sizeof(full_data))){
+        UART_Send(full_data[data_ind++]);
     }else{
         USART_CR1 &= ~(1<<TXEIE);  // clear interrupt
         data_ind=0;
@@ -57,6 +57,7 @@ int main(void){
     while(1){
 
         MPU6050_ReadAccel(imu_buf);
+        memcpy(&full_data[3],&imu_buf[0],sizeof(imu_buf));
 
         for(uint32_t i=0;i<0xFFFF;i++){
             //delay
