@@ -18,6 +18,9 @@
 *.elf
 
 
+# Ignore all csv files
+*.csv
+
 # remove compile.txt
 compile.txt
 
