@@ -3,6 +3,7 @@ arm-none-eabi-gcc -mcpu=cortex-m3 -mthumb -c src\imu\mpu6050.c -o src\imu\mpu605
 arm-none-eabi-gcc -mcpu=cortex-m3 -mthumb -c src\uart\uart.c -o src\uart\uart.o
 arm-none-eabi-gcc -mcpu=cortex-m3 -mthumb -c src\bmp180\bmp180.c -o src\bmp180\bmp180.o
 arm-none-eabi-gcc -mcpu=cortex-m3 -mthumb -c src\global\global.c -o src\global\global.o
+arm-none-eabi-gcc -mcpu=cortex-m3 -mthumb -c src\DWT\dwt.c -o src\DWT\dwt.o
 arm-none-eabi-gcc -mcpu=cortex-m3 -mthumb -c src\lora\lora.c -o src\lora\lora.o
 arm-none-eabi-gcc -mcpu=cortex-m3 -mthumb -c src\main.c -o src\main.o
 
@@ -18,4 +19,4 @@ arm-none-eabi-objcopy -O binary main.elf main.bin
 
 
 
-arm-none-eabi-gcc -mcpu=cortex-m3 -mthumb -T linker_script.ld --specs=nano.specs --specs=nosys.specs startup.o src\main.o src\uart\uart.o src\clk\clk.o src\imu\mpu6050.o src\global\global.o src\syscalls.c -o main.elf
+arm-none-eabi-gcc -mcpu=cortex-m3 -mthumb -T linker_script.ld --specs=nano.specs --specs=nosys.specs startup.o src\main.o src\uart\uart.o src\clk\clk.o src\imu\mpu6050.o src\global\global.o src\syscalls.c src\DWT\dwt.o -o main.elf
