@@ -1,0 +1,18 @@
+# src/clk/clk.o
+# src/global/global.o
+# src/imu/imu.o
+# src/uart/uart.o
+# src/main.o
+
+
+# main.bin
+# main.elf
+# startup.o
+
+
+# Ignore all object files anywhere in the project
+*.o
+
+# Ignore all binary and executable files
+*.bin
+*.elf
