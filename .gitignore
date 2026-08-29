@@ -16,3 +16,10 @@
 # Ignore all binary and executable files
 *.bin
 *.elf
+
+
+# remove compile.txt
+compile.txt
+
+# remove saved data
+uart_data/imu_data_raw.csv
