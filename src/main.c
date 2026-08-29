@@ -3,8 +3,8 @@
 #include "clk/clk.h"
 #include "uart/uart.h"
 #include "nvic.h"
-#include "imu/mpu6050.h"
-
+#include "bmp180/bmp180.h"
+#include "dwt/dwt.h"
 
 #include <string.h>
 
@@ -28,6 +28,7 @@ void USART1_IRQHandler(void){
 
 int main(void){
     Clk_Init();
+    DWT_Init();
     NVIC_ISER1 |= (1 << 5);
 
 
@@ -36,17 +37,18 @@ int main(void){
     if(status){return 1;}
 
 
-    I2C_Init();
+    I2C2_Init();
+
+    uint8_t bmp180_id = bmp180_read_id();
+    if(bmp180_id!=0x55){while(1);}
 
     for (volatile uint32_t i = 0; i < 500000; i++);
-    MPU6050_Init();
+    bmp180_get_cal_param(bmp180_cal_data_buf);
     for (volatile uint32_t i = 0; i < 500000; i++);
 
-    uint8_t chip_id = MPU6050_TestConnection();
-    if (chip_id != 0x68) 
-    {
-        while(1); 
-    }
+    for (volatile uint32_t i = 0; i < 500000; i++);
+    bmp180_get_ut(ut_data);
+    for (volatile uint32_t i = 0; i < 500000; i++);
 
 
     status = UART_TX_Init();
@@ -55,9 +57,27 @@ int main(void){
     }
 
     while(1){
+        start = DWT_CYCCNT;
+        bmp180_get_ut(ut_data);
+        bmp180_get_temperature(T_buf,&B5);
+        end = DWT_CYCCNT;
+        cycles = end - start;
+        memcpy(&full_data[11],&cycles,sizeof(cycles));
 
-        MPU6050_ReadAccel(imu_buf);
-        memcpy(&full_data[3],&imu_buf[0],sizeof(imu_buf));
+        for (volatile uint32_t i = 0; i < 40000; i++); // 5ms
+        start = DWT_CYCCNT;
+        bmp180_get_up(up_data);
+
+        uint32_t raw_up = (((uint32_t)up_data[0] << 16) | ((uint32_t)up_data[1] << 8) | (uint32_t)up_data[2]) >> (8 - 0);
+        bmp180_cal_pressure(bmp180_cal_data_buf,pressure_data,raw_up,B5);
+        end = DWT_CYCCNT;
+        cycles = end - start;
+        memcpy(&full_data[15],&cycles,sizeof(cycles));
+
+
+        memcpy(&full_data[3],&T_buf[0],sizeof(T_buf));
+        memcpy(&full_data[7],&pressure_data[0],sizeof(pressure_data));
+
 
         for(uint32_t i=0;i<0xFFFF;i++){
             //delay
