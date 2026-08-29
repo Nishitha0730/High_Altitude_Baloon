@@ -4,6 +4,7 @@
 #include "uart/uart.h"
 #include "nvic.h"
 #include "imu/mpu6050.h"
+#include "DWT/dwt.h"
 
 
 #include <string.h>
@@ -28,6 +29,7 @@ void USART1_IRQHandler(void){
 
 int main(void){
     Clk_Init();
+    DWT_Init();
     NVIC_ISER1 |= (1 << 5);
 
 
@@ -55,9 +57,13 @@ int main(void){
     }
 
     while(1){
-
+        start = DWT_CYCCNT;
         MPU6050_ReadAccel(imu_buf);
+        end = DWT_CYCCNT;
+        cycles=end-start; // 1.6ms
+
         memcpy(&full_data[3],&imu_buf[0],sizeof(imu_buf));
+        memcpy(&full_data[17],&cycles,sizeof(cycles));
 
         for(uint32_t i=0;i<0xFFFF;i++){
             //delay
