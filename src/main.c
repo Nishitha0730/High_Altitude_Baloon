@@ -4,7 +4,7 @@
 #include "uart/uart.h"
 #include "nvic.h"
 #include "imu/mpu6050.h"
-
+#include "lora/lora.h"
 
 #include <string.h>
 
@@ -28,36 +28,26 @@ void USART1_IRQHandler(void){
 
 int main(void){
     Clk_Init();
+    SPI_init();
     NVIC_ISER1 |= (1 << 5);
-
 
     uint8_t status = 0;
     status = UART_Init();
     if(status){return 1;}
-
-
-    I2C_Init();
-
-    for (volatile uint32_t i = 0; i < 500000; i++);
-    MPU6050_Init();
-    for (volatile uint32_t i = 0; i < 500000; i++);
-
-    uint8_t chip_id = MPU6050_TestConnection();
-    if (chip_id != 0x68) 
-    {
-        while(1); 
-    }
-
 
     status = UART_TX_Init();
     if(status){
         return 1;
     }
 
+
+    lora_id = LoRa_ReadRegister(0x42);
+    full_data[sizeof(full_data)-1]=lora_id;
+    // memcpy(&full_data[3],&lora_id,sizeof(lora_id));
+
     while(1){
 
-        MPU6050_ReadAccel(imu_buf);
-        memcpy(&full_data[3],&imu_buf[0],sizeof(imu_buf));
+        // memcpy(&full_data[3],&lora_id,sizeof(lora_id));
 
         for(uint32_t i=0;i<0xFFFF;i++){
             //delay

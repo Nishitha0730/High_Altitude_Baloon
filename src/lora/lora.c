@@ -35,23 +35,35 @@ void SPI_init(void){
 }
 
 
-uint8_t SPI_Transfer(uint8_t write, uint8_t data)
+uint8_t SPI_Transfer(uint8_t data)
 {
-    //READ - 0, WRITE -1
-
     while (!(SPI_SR & (1 << LORA_TXE)));
 
-    // SPI_DR = (data|(write<<7));
-    if (write) {
-        SPI_DR = data | (1 << 7);  // Force MSB to 1 for write
-    } else {
-        SPI_DR = data & ~(1 << 7); // Force MSB to 0 for read
-    }
+    SPI_DR = data;
 
     while (!(SPI_SR & (1 << LORA_RXNE)));
 
-    return SPI_DR;
+    return (uint8_t)SPI_DR;
 }
+
+
+// uint8_t SPI_Transfer(uint8_t write, uint8_t data)
+// {
+//     //READ - 0, WRITE -1
+
+//     while (!(SPI_SR & (1 << LORA_TXE)));
+
+//     // SPI_DR = (data|(write<<7));
+//     if (write) {
+//         SPI_DR = data | (1 << 7);  // Force MSB to 1 for write
+//     } else {
+//         SPI_DR = data & ~(1 << 7); // Force MSB to 0 for read
+//     }
+
+//     while (!(SPI_SR & (1 << LORA_RXNE)));
+
+//     return SPI_DR;
+// }
 
 void LoRa_Select(void)
 {
@@ -62,4 +74,36 @@ void LoRa_Unselect(void)
 {
     while (SPI_SR & (1 << BSY));
     GPIOA_ODR |= (1 << ODR4);
+}
+
+
+uint8_t LoRa_ReadRegister(uint8_t address)
+{
+    uint8_t value=0xEE;
+
+    LoRa_Select();
+
+    /* Address: MSB = 0 for read */
+    SPI_Transfer(address & 0x7F);
+
+    /* Dummy byte generates clock */
+    value = SPI_Transfer(0x00);
+
+    LoRa_Unselect();
+
+    return value;
+}
+
+
+
+void LoRa_WriteRegister(uint8_t address, uint8_t value)
+{
+    LoRa_Select();
+
+    /* Address: MSB = 1 for write */
+    SPI_Transfer(address | 0x80);
+
+    SPI_Transfer(value);
+
+    LoRa_Unselect();
 }

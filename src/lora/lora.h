@@ -3,10 +3,13 @@
 #include <stdint.h>
 
 void SPI_init(void);
-uint8_t SPI_Transfer(uint8_t read, uint8_t data);
-void LoRa_Select(void);
-void LoRa_Unselect(void);
+// uint8_t SPI_Transfer(uint8_t read, uint8_t data);
+uint8_t SPI_Transfer(uint8_t data);
+// void LoRa_Select(void);
+// void LoRa_Unselect(void);
 
+uint8_t LoRa_ReadRegister(uint8_t address);
+void LoRa_WriteRegister(uint8_t address, uint8_t value);
 
 #define SPI1_BASE 0x40013000UL
 
