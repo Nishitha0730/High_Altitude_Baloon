@@ -18,7 +18,8 @@ void SPI_init(void){
     SPI_CR1 |= (1<<SSM);
     SPI_CR1 |= (1<<SSI);
 
-    GPIOA_CRL &= ~(0xFF<<8); // clear upper two bytes
+    // GPIOA_CRL &= ~(0xFF<<8); // clear upper two bytes
+    GPIOA_CRL &= ~(0xFFFF << 16);
     GPIOA_CRL |= (2 << MODE4) | (0 << CNF4);
     GPIOA_CRL |= (2 << MODE5) | (2 << CNF5);
     GPIOA_CRL |= (0 << MODE6) | (1 << CNF6);
