@@ -22,4 +22,5 @@
 compile.txt
 
 # remove saved data
+uart_data/*.csv
 uart_data/imu_data_raw.csv
