@@ -2,6 +2,8 @@
 #include "../clk/clk.h"
 #include "../uart/uart.h"
 #include <stdint.h>
+#include "lora_registers.h"
+#include "lora_modes.h"
 
 void SPI_init(void){
     RCC_APB2ENR |= (1<<SPI1EN);    // SPI 1 clock enable
@@ -106,4 +108,73 @@ void LoRa_WriteRegister(uint8_t address, uint8_t value)
     SPI_Transfer(value);
 
     LoRa_Unselect();
+}
+
+
+void Lora_Reset(void){
+    GPIOA_CRL &= ~(0xF0<<8);
+    GPIOA_CRL |= (2 << MODE3) | (0 << CNF3);  //RST
+    GPIOA_ODR &= ~(1<<ODR3);  // low
+    for(volatile uint32_t i=0;i<10000;i++){
+        //delay
+    }
+    GPIOA_ODR |= (1<<ODR3); //high
+}
+
+void Lora_Init(uint32_t freq){
+    Lora_Reset();
+    uint8_t version=0;
+    version = LoRa_ReadRegister(REG_VERSION);
+    if(version != 0x12){while(1){}}
+
+    LoRa_WriteRegister(REG_OP_MODE,(1<<MODE_LONG_RANGE_MODE)|(0x00)); // sleep mode+lora enable
+    LoRa_WriteRegister(REG_OP_MODE,(1<<MODE_LONG_RANGE_MODE)|(0x01)); //standby mode
+
+    // Set Frequency (e.g., 433 MHz -> Frf = (433000000 << 19) / 32000000 = 7094272 -> 0x6C4000)
+    uint64_t frf = ((uint64_t)freq << 19) / 32000000;
+    LoRa_WriteRegister(REG_FRF_MSB,(uint8_t)(frf >> 16));
+    LoRa_WriteRegister(REG_FRF_MID,(uint8_t)(frf >> 8));
+    LoRa_WriteRegister(REG_FRF_LSB,(uint8_t)(frf));
+
+    //Set FIFO TX base address to 0x00
+    LoRa_WriteRegister(REG_FIFO_TX_BASE_ADDR, 0x00);
+    LoRa_WriteRegister(REG_FIFO_ADDR_PTR, 0x00);
+
+    //Basic Modem Setup: BW=125kHz, CR=4/5, SF=7
+    LoRa_WriteRegister(REG_MODEM_CONFIG_1, 0x72); 
+    LoRa_WriteRegister(REG_MODEM_CONFIG_2, 0x70); 
+
+    //Set Power Level (Output power ~ 14 dBm via PA_BOOST)
+    LoRa_WriteRegister(REG_PA_CONFIG, 0xCC);
+}
+
+
+void LoRa_SendPacket(uint8_t *buffer, uint8_t length) {
+    // 1. Go to Standby
+    LoRa_WriteRegister(REG_OP_MODE,  (1<<MODE_LONG_RANGE_MODE)| 0x01);
+
+    // 2. Reset FIFO pointer to TX Base Address - for full 256 tx
+    LoRa_WriteRegister(REG_FIFO_ADDR_PTR, 0x00);
+
+    // 3. Write data to internal FIFO
+    for (uint8_t i = 0; i < length; i++) {
+        LoRa_WriteRegister(REG_FIFO, buffer[i]);
+    }
+
+    // 4. Specify the total length of transmission
+    LoRa_WriteRegister(REG_PAYLOAD_LENGTH, length);
+
+    // 5. Clear TX Done Flag by writing a 1 to bit 3 of IRQ flags
+    LoRa_WriteRegister(REG_IRQ_FLAGS, 0x08);
+
+    // 6. Set to Transmit Mode (MODE_TX)
+    LoRa_WriteRegister(REG_OP_MODE, (1<<MODE_LONG_RANGE_MODE)| 0x03);
+
+    // 7. Wait until TxDone bit (0x08) is set in IRQ Flags
+    while ((LoRa_ReadRegister(REG_IRQ_FLAGS) & 0x08) == 0) {
+        // Wait for hardware transmission to complete...
+    }
+
+    // 8. Clear the interrupt flag again
+    LoRa_WriteRegister(REG_IRQ_FLAGS, 0x08);
 }

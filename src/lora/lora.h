@@ -11,6 +11,14 @@ uint8_t SPI_Transfer(uint8_t data);
 uint8_t LoRa_ReadRegister(uint8_t address);
 void LoRa_WriteRegister(uint8_t address, uint8_t value);
 
+
+
+
+void Lora_Reset(void);
+void Lora_Init(uint32_t freq);
+void LoRa_SendPacket(uint8_t *buffer, uint8_t length);
+
+
 #define SPI1_BASE 0x40013000UL
 
 #define SPI_CR1 *(volatile uint32_t *)(SPI1_BASE+0x00)
@@ -46,5 +54,11 @@ void LoRa_WriteRegister(uint8_t address, uint8_t value);
 
 #define GPIOA_ODR *(volatile uint32_t *)(GPIOA_BASE+0x0C)
 #define ODR4 4
+
+
+//Lora RST - PA3
+#define MODE3 12
+#define CNF3 14
+#define ODR3 3
 
 #endif
